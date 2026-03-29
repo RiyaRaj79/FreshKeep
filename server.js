@@ -9,41 +9,30 @@ app.use(express.json());
 
 app.post('/api/chat', async (req, res) => {
     const { messages, system } = req.body;
-    const API_KEY = process.env.ANTHROPIC_API_KEY;
+    const API_KEY = process.env.GEMINI_API_KEY;
+    const MODEL = 'gemini-2.0-flash';
+    const URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`;
+
+    const contents = messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+    }));
+
+    contents[0].parts[0].text = system + '\n\n' + contents[0].parts[0].text;
 
     try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+        const response = await fetch(URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': API_KEY,
-                'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify({
-                model: 'claude-haiku-4-5-20251001',
-                max_tokens: 800,
-                system: system,
-                messages: messages
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents })
         });
         const data = await response.json();
-        res.json(data);
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, no response.';
+        res.json({ content: [{ text }] });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to connect to Anthropic' });
+        res.status(500).json({ error: 'Failed to connect to Gemini' });
     }
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-```
-
-3. In your `.env` file:
-```
-ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
-PORT=5000
-```
-
-4. Add `.env` to `.gitignore`:
-```
-.env
-node_modules
