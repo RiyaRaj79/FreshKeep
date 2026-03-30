@@ -856,7 +856,7 @@ async function sendMessage() {
     if (data.content && data.content[0] && data.content[0].text) {
       aiText = data.content[0].text;
     } else if (data.error) {
-      aiText = '⚠️ API Error: ' + data.error.message;
+      aiText = '⚠️ Something went wrong: ' + (data.error.message || JSON.stringify(data.error));
     } else {
       aiText = "Sorry, I couldn't get a response. Please try again!";
     }
